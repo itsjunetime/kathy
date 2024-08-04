@@ -1,0 +1,7 @@
+[package]
+name = "kathy"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kathy_macros = { path = "./kathy_macros" }
