@@ -54,7 +54,7 @@ pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 
 		#impl_idx
 
-		impl<T> ::std::ops::Index<T> for #input_name
+		impl<T> ::core::ops::Index<T> for #input_name
 		where
 			#input_name: ::kathy::KeyPathIndexable<T>
 		{
@@ -64,7 +64,7 @@ pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 			}
 		}
 
-		impl<T> ::std::ops::IndexMut<T> for #input_name
+		impl<T> ::core::ops::IndexMut<T> for #input_name
 		where
 			#input_name: ::kathy::KeyPathIndexable<T>
 		{

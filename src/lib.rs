@@ -1,15 +1,19 @@
 #![feature(unsized_const_params)]
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub use kathy_macros::Keyable;
 
 impl<T1, T2, I> KeyPathIndexable<(T1, T2)> for I
 where
-	I: KeyPathIndexable<T1>,
-	<I as KeyPathIndexable<T1>>::Type: KeyPathIndexable<T2> + 'static
+	// theoretically it would be nice to add `T1: ?Sized` as well but that violates rust's rule
+	// about 'only the last element of a tuple may be unsized' and realistically this will only be
+	// used with KeyPath anyways, which is always zero-sized, so whatever.
+	T2: ?Sized,
+	I: KeyPathIndexable<T2> + ?Sized,
+	<I as KeyPathIndexable<T2>>::Type: KeyPathIndexable<T1> + 'static
 {
-	type Type = <<I as KeyPathIndexable<T1>>::Type as KeyPathIndexable<T2>>::Type;
+	type Type = <<I as KeyPathIndexable<T2>>::Type as KeyPathIndexable<T1>>::Type;
 	fn idx(&self) -> &Self::Type {
 		self.idx().idx()
 	}
@@ -20,7 +24,7 @@ where
 
 impl<T, I> KeyPathIndexable<Aggregator<T>> for I
 where
-	I: KeyPathIndexable<T>
+	I: KeyPathIndexable<T> + ?Sized
 {
 	type Type = <I as KeyPathIndexable<T>>::Type;
 	fn idx(&self) -> &Self::Type {
@@ -31,53 +35,80 @@ where
 	}
 }
 
-pub struct Aggregator<T> {
+pub struct Aggregator<T>
+where
+	T: ?Sized
+{
 	_phantom: PhantomData<T>
 }
 
-impl<T> Aggregator<T> {
+impl<T> Aggregator<T>
+where
+	T: ?Sized
+{
 	pub const fn new() -> Self {
 		Self {
 			_phantom: PhantomData
 		}
 	}
-	pub const fn kp<const NAME: &'static str, T2>(self) -> Aggregator<(T, KeyPath<NAME, T2>)> {
+	pub const fn kp<const NAME: &'static str, T2>(self) -> Aggregator<(KeyPath<NAME, T2>, T)>
+	where
+		T2: ?Sized
+	{
 		Aggregator::new()
 	}
 }
 
 // unfortunately, we need to write these impls ourselves since they should be implemented
 // regardless of what T is.
-impl<T> Default for Aggregator<T> {
+impl<T> Default for Aggregator<T>
+where
+	T: ?Sized
+{
 	fn default() -> Self {
 		Self::new()
 	}
 }
 
-impl<T> Clone for Aggregator<T> {
+impl<T> Clone for Aggregator<T>
+where
+	T: ?Sized
+{
 	fn clone(&self) -> Self {
 		*self
 	}
 }
 
-impl<T> Copy for Aggregator<T> {}
+impl<T> Copy for Aggregator<T> where T: ?Sized {}
 
-pub struct KeyPath<const NAME: &'static str, T> {
+pub struct KeyPath<const NAME: &'static str, T>
+where
+	T: ?Sized
+{
 	_phantom: PhantomData<T>
 }
 
-impl<const NAME: &'static str, T> KeyPath<NAME, T> {
+impl<const NAME: &'static str, T> KeyPath<NAME, T>
+where
+	T: ?Sized
+{
 	pub const fn new() -> Self {
 		Self {
 			_phantom: PhantomData
 		}
 	}
-	pub const fn kp<const N2: &'static str, T2>(self) -> Aggregator<(Self, KeyPath<N2, T2>)> {
+	pub const fn kp<const N2: &'static str, T2>(self) -> Aggregator<(KeyPath<N2, T2>, Self)>
+	where
+		T2: ?Sized
+	{
 		Aggregator::new()
 	}
 }
 
-impl<const NAME: &'static str, T> Default for KeyPath<NAME, T> {
+impl<const NAME: &'static str, T> Default for KeyPath<NAME, T>
+where
+	T: ?Sized
+{
 	fn default() -> Self {
 		Self {
 			_phantom: PhantomData
@@ -85,16 +116,22 @@ impl<const NAME: &'static str, T> Default for KeyPath<NAME, T> {
 	}
 }
 
-impl<const NAME: &'static str, T> Clone for KeyPath<NAME, T> {
+impl<const NAME: &'static str, T> Clone for KeyPath<NAME, T>
+where
+	T: ?Sized
+{
 	fn clone(&self) -> Self {
 		*self
 	}
 }
 
-impl<const NAME: &'static str, T> Copy for KeyPath<NAME, T> {}
+impl<const NAME: &'static str, T> Copy for KeyPath<NAME, T> where T: ?Sized {}
 
-pub trait KeyPathIndexable<T> {
-	type Type;
+pub trait KeyPathIndexable<T>
+where
+	T: ?Sized
+{
+	type Type: ?Sized;
 	fn idx(&self) -> &Self::Type;
 	fn idx_mut(&mut self) -> &mut Self::Type;
 }
