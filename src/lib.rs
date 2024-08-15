@@ -235,7 +235,7 @@ pub trait RefMapKeyPath<'item, T>: Iterator<Item = &'item T>
 where
 	T: 'item
 {
-	fn map_kp<KP>(
+	fn map_kp_ref<KP>(
 		self,
 		_kp: KP
 	) -> core::iter::Map<Self, impl FnMut(&'item T) -> &<T as RefKeyPathIndexable<KP>>::Type>
@@ -259,7 +259,7 @@ pub trait MutMapKeyPath<'item, T>: Iterator<Item = &'item mut T>
 where
 	T: 'item
 {
-	fn map_kp<KP>(
+	fn map_kp_mut<KP>(
 		self,
 		_kp: KP
 	) -> core::iter::Map<Self, impl FnMut(&'item mut T) -> &mut <T as RefKeyPathIndexable<KP>>::Type>
