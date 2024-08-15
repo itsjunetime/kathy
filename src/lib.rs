@@ -18,7 +18,9 @@ where
 {
 	type Type = <<I as RefKeyPathIndexable<T2>>::Type as RefKeyPathIndexable<T1>>::Type;
 	fn idx(&self) -> &Self::Type {
-		self.idx().idx()
+		<<I as RefKeyPathIndexable<T2>>::Type as RefKeyPathIndexable<T1>>::idx(
+			<I as RefKeyPathIndexable<T2>>::idx(self)
+		)
 	}
 }
 
@@ -221,11 +223,58 @@ pub trait MapKeyPath: Iterator {
 	where
 		Self::Item: MovingKeyPathIndexable<KP>,
 		<Self::Item as RefKeyPathIndexable<KP>>::Type: Sized,
-		Self: Sized,
-		KP: Copy + 'static
+		Self: Sized
 	{
-		self.map(move |item| <Self::Item as MovingKeyPathIndexable<KP>>::idx_move(item))
+		self.map(|item| <Self::Item as MovingKeyPathIndexable<KP>>::idx_move(item))
 	}
 }
 
 impl<T> MapKeyPath for T where T: Iterator {}
+
+pub trait RefMapKeyPath<'item, T>: Iterator<Item = &'item T>
+where
+	T: 'item
+{
+	fn map_kp<KP>(
+		self,
+		_kp: KP
+	) -> core::iter::Map<Self, impl FnMut(&'item T) -> &<T as RefKeyPathIndexable<KP>>::Type>
+	where
+		T: RefKeyPathIndexable<KP>,
+		<T as RefKeyPathIndexable<KP>>::Type: 'item,
+		Self: Sized
+	{
+		self.map(|item| <T as RefKeyPathIndexable<KP>>::idx(item))
+	}
+}
+
+impl<'item, I, T> RefMapKeyPath<'item, I> for T
+where
+	T: Iterator<Item = &'item I>,
+	I: 'item
+{
+}
+
+pub trait MutMapKeyPath<'item, T>: Iterator<Item = &'item mut T>
+where
+	T: 'item
+{
+	fn map_kp<KP>(
+		self,
+		_kp: KP
+	) -> core::iter::Map<Self, impl FnMut(&'item mut T) -> &mut <T as RefKeyPathIndexable<KP>>::Type>
+	where
+		T: MutKeyPathIndexable<KP>,
+		<T as RefKeyPathIndexable<KP>>::Type: 'item,
+		Self: Sized
+	{
+		self.map(|item| <T as MutKeyPathIndexable<KP>>::idx_mut(item))
+	}
+}
+
+impl<'item, I, T> MutMapKeyPath<'item, I> for T
+where
+	T: Iterator<Item = &'item mut I>,
+	I: 'item
+{
+}
