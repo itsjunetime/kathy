@@ -26,7 +26,8 @@ impl<T1, T2, I> MutKeyPathIndexable<(T1, T2)> for I
 where
 	T2: ?Sized,
 	I: MutKeyPathIndexable<T2> + ?Sized,
-	<I as RefKeyPathIndexable<T2>>::Type: RefKeyPathIndexable<T1> + MutKeyPathIndexable<T1> + 'static
+	<I as RefKeyPathIndexable<T2>>::Type:
+		RefKeyPathIndexable<T1> + MutKeyPathIndexable<T1> + 'static
 {
 	fn idx_mut(&mut self) -> &mut Self::Type {
 		<<I as RefKeyPathIndexable<T2>>::Type as MutKeyPathIndexable<T1>>::idx_mut(
@@ -156,11 +157,10 @@ where
 	fn idx_mut(&mut self) -> &mut Self::Type;
 }
 
-
 pub trait MovingKeyPathIndexable<T>: MutKeyPathIndexable<T>
 where
 	T: ?Sized,
-	Self::Type: Sized,
+	Self::Type: Sized
 {
 	fn idx_move(self) -> Self::Type;
 }
@@ -211,7 +211,13 @@ impl<const N: usize, T> MovingKeyPathIndexable<UsizeKeyPath<N>> for Vec<T> {
 }
 
 pub trait MapKeyPath: Iterator {
-	fn map_kp<KP>(self, _kp: KP) -> core::iter::Map<Self, impl FnMut(Self::Item) -> <Self::Item as RefKeyPathIndexable<KP>>::Type>
+	fn map_kp<KP>(
+		self,
+		_kp: KP
+	) -> core::iter::Map<
+		Self,
+		impl FnMut(Self::Item) -> <Self::Item as RefKeyPathIndexable<KP>>::Type
+	>
 	where
 		Self::Item: MovingKeyPathIndexable<KP>,
 		<Self::Item as RefKeyPathIndexable<KP>>::Type: Sized,

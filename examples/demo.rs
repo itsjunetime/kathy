@@ -1,4 +1,4 @@
-use kathy::{MutKeyPathIndexable, Keyable};
+use kathy::{Keyable, MutKeyPathIndexable};
 
 #[derive(Debug, Keyable)]
 struct Family {
