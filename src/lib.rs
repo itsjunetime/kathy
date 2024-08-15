@@ -7,34 +7,73 @@ use core::{
 
 pub use kathy_macros::Keyable;
 
-impl<T1, T2, I> KeyPathIndexable<(T1, T2)> for I
+impl<T1, T2, I> RefKeyPathIndexable<(T1, T2)> for I
 where
 	// theoretically it would be nice to add `T1: ?Sized` as well but that violates rust's rule
 	// about 'only the last element of a tuple may be unsized' and realistically this will only be
 	// used with KeyPath anyways, which is always zero-sized, so whatever.
 	T2: ?Sized,
-	I: KeyPathIndexable<T2> + ?Sized,
-	<I as KeyPathIndexable<T2>>::Type: KeyPathIndexable<T1> + 'static
+	I: RefKeyPathIndexable<T2> + ?Sized,
+	<I as RefKeyPathIndexable<T2>>::Type: RefKeyPathIndexable<T1> + 'static
 {
-	type Type = <<I as KeyPathIndexable<T2>>::Type as KeyPathIndexable<T1>>::Type;
+	type Type = <<I as RefKeyPathIndexable<T2>>::Type as RefKeyPathIndexable<T1>>::Type;
 	fn idx(&self) -> &Self::Type {
 		self.idx().idx()
 	}
+}
+
+impl<T1, T2, I> MutKeyPathIndexable<(T1, T2)> for I
+where
+	T2: ?Sized,
+	I: MutKeyPathIndexable<T2> + ?Sized,
+	<I as RefKeyPathIndexable<T2>>::Type: RefKeyPathIndexable<T1> + MutKeyPathIndexable<T1> + 'static
+{
 	fn idx_mut(&mut self) -> &mut Self::Type {
-		self.idx_mut().idx_mut()
+		<<I as RefKeyPathIndexable<T2>>::Type as MutKeyPathIndexable<T1>>::idx_mut(
+			<I as MutKeyPathIndexable<T2>>::idx_mut(self)
+		)
 	}
 }
 
-impl<T, I> KeyPathIndexable<Aggregator<T>> for I
+impl<T1, T2, I> MovingKeyPathIndexable<(T1, T2)> for I
 where
-	I: KeyPathIndexable<T> + ?Sized
+	I: MovingKeyPathIndexable<T2>,
+	<I as RefKeyPathIndexable<T2>>::Type: MovingKeyPathIndexable<T1> + Sized + 'static,
+	<<I as RefKeyPathIndexable<T2>>::Type as RefKeyPathIndexable<T1>>::Type: Sized
 {
-	type Type = <I as KeyPathIndexable<T>>::Type;
-	fn idx(&self) -> &Self::Type {
-		<I as KeyPathIndexable<T>>::idx(self)
+	fn idx_move(self) -> Self::Type {
+		<<I as RefKeyPathIndexable<T2>>::Type as MovingKeyPathIndexable<T1>>::idx_move(
+			<I as MovingKeyPathIndexable<T2>>::idx_move(self)
+		)
 	}
+}
+
+impl<T, I> RefKeyPathIndexable<Aggregator<T>> for I
+where
+	I: RefKeyPathIndexable<T> + ?Sized
+{
+	type Type = <I as RefKeyPathIndexable<T>>::Type;
+	fn idx(&self) -> &Self::Type {
+		<I as RefKeyPathIndexable<T>>::idx(self)
+	}
+}
+
+impl<T, I> MutKeyPathIndexable<Aggregator<T>> for I
+where
+	I: MutKeyPathIndexable<T> + ?Sized
+{
 	fn idx_mut(&mut self) -> &mut Self::Type {
-		<I as KeyPathIndexable<T>>::idx_mut(self)
+		<I as MutKeyPathIndexable<T>>::idx_mut(self)
+	}
+}
+
+impl<T, I> MovingKeyPathIndexable<Aggregator<T>> for I
+where
+	I: MovingKeyPathIndexable<T>,
+	<I as RefKeyPathIndexable<T>>::Type: Sized
+{
+	fn idx_move(self) -> Self::Type {
+		<I as MovingKeyPathIndexable<T>>::idx_move(self)
 	}
 }
 
@@ -102,24 +141,85 @@ impl<const NAME: &'static str> KeyPath<NAME> {
 #[derive(Copy, Clone, Default)]
 pub struct UsizeKeyPath<const N: usize>;
 
-pub trait KeyPathIndexable<T>
+pub trait RefKeyPathIndexable<T>
 where
 	T: ?Sized
 {
 	type Type: ?Sized;
 	fn idx(&self) -> &Self::Type;
+}
+
+pub trait MutKeyPathIndexable<T>: RefKeyPathIndexable<T>
+where
+	T: ?Sized
+{
 	fn idx_mut(&mut self) -> &mut Self::Type;
 }
 
-impl<const N: usize, T> KeyPathIndexable<UsizeKeyPath<N>> for T
+
+pub trait MovingKeyPathIndexable<T>: MutKeyPathIndexable<T>
 where
-	T: Index<usize> + IndexMut<usize>
+	T: ?Sized,
+	Self::Type: Sized,
+{
+	fn idx_move(self) -> Self::Type;
+}
+
+// hmmmm. how do we do this without running into the weird infinitely recursive trait resolution
+// stuff.
+/*impl<I, T> MovingKeyPathIndexable<I> for &mut T
+where
+	T: MutKeyPathIndexable<I>
+{
+	fn idx_move(self) -> Self::Type {
+		self.idx_mut()
+	}
+}
+
+impl<I, T> MovingKeyPathIndexable<I> for &T
+where
+	T: RefKeyPathIndexable<I>
+{
+	fn idx_move(self) -> Self::Type {
+		self.idx()
+	}
+}*/
+
+impl<const N: usize, T> RefKeyPathIndexable<UsizeKeyPath<N>> for T
+where
+	T: Index<usize>
 {
 	type Type = <T as Index<usize>>::Output;
 	fn idx(&self) -> &Self::Type {
 		&self[N]
 	}
+}
+
+impl<const N: usize, T> MutKeyPathIndexable<UsizeKeyPath<N>> for T
+where
+	T: IndexMut<usize>
+{
 	fn idx_mut(&mut self) -> &mut Self::Type {
 		&mut self[N]
 	}
 }
+
+impl<const N: usize, T> MovingKeyPathIndexable<UsizeKeyPath<N>> for Vec<T> {
+	fn idx_move(mut self) -> Self::Type {
+		self.remove(N)
+	}
+}
+
+pub trait MapKeyPath: Iterator {
+	fn map_kp<KP>(self, _kp: KP) -> core::iter::Map<Self, impl FnMut(Self::Item) -> <Self::Item as RefKeyPathIndexable<KP>>::Type>
+	where
+		Self::Item: MovingKeyPathIndexable<KP>,
+		<Self::Item as RefKeyPathIndexable<KP>>::Type: Sized,
+		Self: Sized,
+		KP: Copy + 'static
+	{
+		self.map(move |item| <Self::Item as MovingKeyPathIndexable<KP>>::idx_move(item))
+	}
+}
+
+impl<T> MapKeyPath for T where T: Iterator {}
