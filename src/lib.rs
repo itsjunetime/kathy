@@ -1,6 +1,9 @@
 #![feature(unsized_const_params)]
 
-use core::marker::PhantomData;
+use core::{
+	marker::PhantomData,
+	ops::{Index, IndexMut}
+};
 
 pub use kathy_macros::Keyable;
 
@@ -51,10 +54,12 @@ where
 			_phantom: PhantomData
 		}
 	}
-	pub const fn kp<const NAME: &'static str, T2>(self) -> Aggregator<(KeyPath<NAME, T2>, T)>
-	where
-		T2: ?Sized
-	{
+
+	pub const fn kp<const NAME: &'static str>(self) -> Aggregator<(KeyPath<NAME>, T)> {
+		Aggregator::new()
+	}
+
+	pub const fn idx<const N: usize>(self) -> Aggregator<(UsizeKeyPath<N>, T)> {
 		Aggregator::new()
 	}
 }
@@ -81,51 +86,21 @@ where
 
 impl<T> Copy for Aggregator<T> where T: ?Sized {}
 
-pub struct KeyPath<const NAME: &'static str, T>
-where
-	T: ?Sized
-{
-	_phantom: PhantomData<T>
-}
+#[derive(Copy, Clone, Default)]
+pub struct KeyPath<const NAME: &'static str>;
 
-impl<const NAME: &'static str, T> KeyPath<NAME, T>
-where
-	T: ?Sized
-{
-	pub const fn new() -> Self {
-		Self {
-			_phantom: PhantomData
-		}
+impl<const NAME: &'static str> KeyPath<NAME> {
+	pub const fn kp<const N2: &'static str>(self) -> Aggregator<(KeyPath<N2>, Self)> {
+		Aggregator::new()
 	}
-	pub const fn kp<const N2: &'static str, T2>(self) -> Aggregator<(KeyPath<N2, T2>, Self)>
-	where
-		T2: ?Sized
-	{
+
+	pub const fn idx<const N: usize>(self) -> Aggregator<(UsizeKeyPath<N>, Self)> {
 		Aggregator::new()
 	}
 }
 
-impl<const NAME: &'static str, T> Default for KeyPath<NAME, T>
-where
-	T: ?Sized
-{
-	fn default() -> Self {
-		Self {
-			_phantom: PhantomData
-		}
-	}
-}
-
-impl<const NAME: &'static str, T> Clone for KeyPath<NAME, T>
-where
-	T: ?Sized
-{
-	fn clone(&self) -> Self {
-		*self
-	}
-}
-
-impl<const NAME: &'static str, T> Copy for KeyPath<NAME, T> where T: ?Sized {}
+#[derive(Copy, Clone, Default)]
+pub struct UsizeKeyPath<const N: usize>;
 
 pub trait KeyPathIndexable<T>
 where
@@ -134,4 +109,17 @@ where
 	type Type: ?Sized;
 	fn idx(&self) -> &Self::Type;
 	fn idx_mut(&mut self) -> &mut Self::Type;
+}
+
+impl<const N: usize, T> KeyPathIndexable<UsizeKeyPath<N>> for T
+where
+	T: Index<usize> + IndexMut<usize>
+{
+	type Type = <T as Index<usize>>::Output;
+	fn idx(&self) -> &Self::Type {
+		&self[N]
+	}
+	fn idx_mut(&mut self) -> &mut Self::Type {
+		&mut self[N]
+	}
 }

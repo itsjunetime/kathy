@@ -19,9 +19,8 @@ pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 	let impl_consts: TokenStream = fields_with_strs.iter()
 		.map(|(s, f)| {
 			let f_ident = &f.ident;
-			let f_ty = &f.ty;
 			quote! {
-				const #f_ident: ::kathy::KeyPath<#s, #f_ty> = ::kathy::KeyPath::new();
+				const #f_ident: ::kathy::KeyPath<#s> = ::kathy::KeyPath;
 			}
 		}).collect();
 
@@ -33,7 +32,7 @@ pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 			let f_ty = &f.ty;
 
 			quote!{
-				impl ::kathy::KeyPathIndexable<::kathy::KeyPath<#s, #f_ty>> for #input_name {
+				impl ::kathy::KeyPathIndexable<::kathy::KeyPath<#s>> for #input_name {
 					type Type = #f_ty;
 					fn idx(&self) -> &Self::Type {
 						&self.#f_ident
