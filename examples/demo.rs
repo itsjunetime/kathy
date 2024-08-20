@@ -1,4 +1,4 @@
-use kathy::{Keyable, MutKeyPathIndexable};
+use kathy::{KeyPathIndexable, Keyable};
 
 #[derive(Debug, Keyable)]
 struct Family {
@@ -57,7 +57,7 @@ fn real_main(mut family: Family) {
 
 fn modify<T, KP, I>(thing: &mut T, _path: KP, new_val: I)
 where
-	T: MutKeyPathIndexable<KP, Type = I>
+	for<'a> &'a mut T: KeyPathIndexable<KP, Output = &'a mut I>
 {
-	*thing.idx_mut() = new_val;
+	*thing.idx() = new_val;
 }

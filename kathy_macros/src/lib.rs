@@ -32,24 +32,23 @@ pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 			let f_ty = &f.ty;
 
 			quote!{
-				impl ::kathy::RefKeyPathIndexable<::kathy::KeyPath<#s>> for #input_name {
-					type Type = #f_ty;
-					fn idx(&self) -> &Self::Type {
+				impl<'a> ::kathy::KeyPathIndexable<::kathy::KeyPath<#s>> for &'a #input_name {
+					type Output = &'a #f_ty;
+					fn idx(self) -> Self::Output {
 						&self.#f_ident
 					}
 				}
 
-				impl ::kathy::MutKeyPathIndexable<::kathy::KeyPath<#s>> for #input_name {
-					fn idx_mut(&mut self) -> &mut Self::Type {
+				impl<'a> ::kathy::KeyPathIndexable<::kathy::KeyPath<#s>> for &'a mut #input_name {
+					type Output = &'a mut #f_ty;
+					fn idx(self) -> Self::Output {
 						&mut self.#f_ident
 					}
 				}
 
-				impl ::kathy::MovingKeyPathIndexable<::kathy::KeyPath<#s>> for #input_name
-				where
-					<Self as ::kathy::RefKeyPathIndexable<::kathy::KeyPath<#s>>>::Type: ::core::marker::Sized
-				{
-					fn idx_move(self) -> Self::Type {
+				impl ::kathy::KeyPathIndexable<::kathy::KeyPath<#s>> for #input_name {
+					type Output = #f_ty;
+					fn idx(self) -> Self::Output {
 						self.#f_ident
 					}
 				}
@@ -67,20 +66,39 @@ pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 
 		impl<T> ::core::ops::Index<T> for #input_name
 		where
-			#input_name: ::kathy::RefKeyPathIndexable<T>
+			for<'a> &'a #input_name: ::kathy::KeyPathIndexable<T>,
+			#input_name: ::kathy::KeyPathIndexable<T>,
+			for<'a> <&'a #input_name as ::kathy::KeyPathIndexable<T>>::Output:
+				::kathy::TypeEquals<&'a <#input_name as ::kathy::KeyPathIndexable<T>>::Output>,
 		{
-			type Output = <#input_name as ::kathy::RefKeyPathIndexable<T>>::Type;
+			type Output = <#input_name as ::kathy::KeyPathIndexable<T>>::Output;
 			fn index(&self, _: T) -> &Self::Output {
-				<Self as ::kathy::RefKeyPathIndexable<T>>::idx(self)
+				use ::kathy::TypeEquals as _;
+				<&Self as ::kathy::KeyPathIndexable<T>>::idx(self)
+					.to_type()
 			}
 		}
 
 		impl<T> ::core::ops::IndexMut<T> for #input_name
 		where
-			#input_name: ::kathy::MutKeyPathIndexable<T>
+			// need to include the requirements from Index
+			for<'a> &'a #input_name: ::kathy::KeyPathIndexable<T>,
+			#input_name: ::kathy::KeyPathIndexable<T>,
+			for<'a> <&'a #input_name as ::kathy::KeyPathIndexable<T>>::Output:
+				::kathy::TypeEquals<&'a <#input_name as ::kathy::KeyPathIndexable<T>>::Output>,
+			// and then here are the requirements specific to IndexMut
+			for<'a> &'a  mut #input_name: ::kathy::KeyPathIndexable<T>,
+			#input_name: ::kathy::KeyPathIndexable<T>,
+			for<'a> <&'a mut #input_name as ::kathy::KeyPathIndexable<T>>::Output:
+				::kathy::TypeEquals<&'a mut <#input_name as ::kathy::KeyPathIndexable<T>>::Output>,
 		{
 			fn index_mut(&mut self, _: T) -> &mut Self::Output {
-				<Self as ::kathy::MutKeyPathIndexable<T>>::idx_mut(self)
+				use ::kathy::TypeEquals as _;
+				let out1: <&mut Self as ::kathy::KeyPathIndexable<T>>::Output =
+					<&mut Self as ::kathy::KeyPathIndexable<T>>::idx(self);
+
+				let out2: &mut <Self as ::kathy::KeyPathIndexable<T>>::Output = out1.to_type();
+				out2
 			}
 		}
 	}.into()

@@ -1,5 +1,7 @@
 # kathy
 
-Compile-time, zero-cost, very simple keypath functionality for rust. Requires nightly.
+Compile-time, zero-cost, very simple keypath functionality for rust.
 
-Look at `examples/demo.rs` to see how it works.
+Requires nightly and `env RUSTFLAGS="-Znext-solver=globally"` to work and use correctly :)
+
+Look at `examples/*.rs` to see how it works.

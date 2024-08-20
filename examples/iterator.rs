@@ -1,4 +1,4 @@
-use kathy::{Keyable, MapKeyPath, MutMapKeyPath, RefMapKeyPath};
+use kathy::{Keyable, MapKeyPath};
 
 #[derive(Keyable)]
 struct Vec2 {
@@ -38,16 +38,19 @@ fn main() {
 	];
 
 	//// hmmm how do we fix the compiler being weird here.
-	people.iter()
-		.map_kp_ref(Person::dimensions.kp::<"height">())
+	people
+		.iter()
+		.map_kp(Person::dimensions.kp::<"height">())
 		.for_each(|height| println!("height: {height}"));
 
-	people.iter_mut()
-		.map_kp_mut(Person::dimensions.kp::<"width">())
-		.map(|width| width * 2)
+	people
+		.iter_mut()
+		.map_kp(Person::dimensions.kp::<"width">())
+		.map(|width| *width * 2)
 		.for_each(|width| println!("width: {width}"));
 
-	people.into_iter()
+	people
+		.into_iter()
 		.map_kp(Person::name)
 		.for_each(|name| println!("name: {name}"));
 }
