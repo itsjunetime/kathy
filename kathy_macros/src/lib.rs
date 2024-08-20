@@ -94,11 +94,8 @@ pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 		{
 			fn index_mut(&mut self, _: T) -> &mut Self::Output {
 				use ::kathy::TypeEquals as _;
-				let out1: <&mut Self as ::kathy::KeyPathIndexable<T>>::Output =
-					<&mut Self as ::kathy::KeyPathIndexable<T>>::idx(self);
-
-				let out2: &mut <Self as ::kathy::KeyPathIndexable<T>>::Output = out1.to_type();
-				out2
+				<&mut Self as ::kathy::KeyPathIndexable<T>>::idx(self)
+					.to_type()
 			}
 		}
 	}.into()
