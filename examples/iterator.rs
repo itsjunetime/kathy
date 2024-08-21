@@ -37,7 +37,6 @@ fn main() {
 		}
 	];
 
-	//// hmmm how do we fix the compiler being weird here.
 	people
 		.iter()
 		.map_kp(Person::dimensions.kp::<"height">())

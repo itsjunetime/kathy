@@ -1,3 +1,5 @@
+use std::ops::IndexMut;
+
 use kathy::{KeyPathIndexable, Keyable};
 
 #[derive(Debug, Keyable)]
@@ -55,9 +57,10 @@ fn real_main(mut family: Family) {
 	println!("family: {family:?}");
 }
 
-fn modify<T, KP, I>(thing: &mut T, _path: KP, new_val: I)
+#[inline(never)]
+fn modify<KP, I>(thing: &mut Person, path: KP, new_val: I)
 where
-	for<'a> &'a mut T: KeyPathIndexable<KP, Output = &'a mut I>
+	Person: IndexMut<KP, Output = I>
 {
-	*thing.idx() = new_val;
+	thing[path] = new_val;
 }

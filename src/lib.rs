@@ -17,6 +17,7 @@ where
 	<I as KeyPathIndexable<T2>>::Output: KeyPathIndexable<T1>
 {
 	type Output = <<I as KeyPathIndexable<T2>>::Output as KeyPathIndexable<T1>>::Output;
+	#[inline(always)]
 	fn idx(self) -> Self::Output {
 		<<I as KeyPathIndexable<T2>>::Output as KeyPathIndexable<T1>>::idx(
 			<I as KeyPathIndexable<T2>>::idx(self)
@@ -30,6 +31,7 @@ where
 	<I as KeyPathIndexable<T>>::Output: Sized
 {
 	type Output = <I as KeyPathIndexable<T>>::Output;
+	#[inline(always)]
 	fn idx(self) -> Self::Output {
 		<I as KeyPathIndexable<T>>::idx(self)
 	}
@@ -46,16 +48,19 @@ impl<T> Aggregator<T>
 where
 	T: ?Sized
 {
+	#[inline(always)]
 	pub const fn new() -> Self {
 		Self {
 			_phantom: PhantomData
 		}
 	}
 
+	#[inline(always)]
 	pub const fn kp<const NAME: &'static str>(self) -> Aggregator<(KeyPath<NAME>, T)> {
 		Aggregator::new()
 	}
 
+	#[inline(always)]
 	pub const fn idx<const N: usize>(self) -> Aggregator<(UsizeKeyPath<N>, T)> {
 		Aggregator::new()
 	}
@@ -67,6 +72,7 @@ impl<T> Default for Aggregator<T>
 where
 	T: ?Sized
 {
+	#[inline(always)]
 	fn default() -> Self {
 		Self::new()
 	}
@@ -76,6 +82,7 @@ impl<T> Clone for Aggregator<T>
 where
 	T: ?Sized
 {
+	#[inline(always)]
 	fn clone(&self) -> Self {
 		*self
 	}
@@ -87,10 +94,12 @@ impl<T> Copy for Aggregator<T> where T: ?Sized {}
 pub struct KeyPath<const NAME: &'static str>;
 
 impl<const NAME: &'static str> KeyPath<NAME> {
+	#[inline(always)]
 	pub const fn kp<const N2: &'static str>(self) -> Aggregator<(KeyPath<N2>, Self)> {
 		Aggregator::new()
 	}
 
+	#[inline(always)]
 	pub const fn idx<const N: usize>(self) -> Aggregator<(UsizeKeyPath<N>, Self)> {
 		Aggregator::new()
 	}
@@ -112,6 +121,7 @@ where
 	T: Index<usize>
 {
 	type Output = &'t <T as Index<usize>>::Output;
+	#[inline(always)]
 	fn idx(self) -> Self::Output {
 		&self[N]
 	}
@@ -122,6 +132,7 @@ where
 	T: IndexMut<usize>
 {
 	type Output = &'t mut <T as Index<usize>>::Output;
+	#[inline(always)]
 	fn idx(self) -> Self::Output {
 		&mut self[N]
 	}
@@ -129,6 +140,7 @@ where
 
 impl<const N: usize, T> KeyPathIndexable<UsizeKeyPath<N>> for Vec<T> {
 	type Output = T;
+	#[inline(always)]
 	fn idx(mut self) -> Self::Output {
 		self.remove(N)
 	}
