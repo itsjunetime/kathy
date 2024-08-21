@@ -1,7 +1,19 @@
 [package]
 name = "kathy"
 version = "0.1.0"
+authors = ["June Welker <junewelker@gmail.com>"]
 edition = "2021"
+rust-version = "1.82"
+description = "Const-evaluated swift-style keypaths"
+readme = true
+repository = "https://github.com/itsjunetime/kathy"
+license = "MPL-2.0"
+keywords = ["swift", "keypath", "nightly", "experimental"]
+categories = ["data-structures", "no-std", "no-std::no-alloc", "rust-patterns"]
 
 [dependencies]
 kathy_macros = { path = "./kathy_macros" }
+
+[features]
+default = ["alloc"]
+alloc = []

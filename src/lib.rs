@@ -155,6 +155,7 @@ where
 /// A special-cased implementation for move-by-indexing with a Vec, as there is no standard trait
 /// to implement such a thing (since [`Index`] and [`IndexMut`] only allow ref-by-index and
 /// mut-ref-by-index, respectively.
+#[cfg(feature = "alloc")]
 impl<const N: usize, T> KeyPathIndexable<UsizeKeyPath<N>> for Vec<T> {
 	type Output = T;
 	#[inline(always)]
