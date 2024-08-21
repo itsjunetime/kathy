@@ -2,6 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Data, DataStruct, DeriveInput, Fields};
 
+/// Please see the main page of `kathy`'s docs to learn how to use this.
 #[proc_macro_derive(Keyable)]
 pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let input = syn::parse_macro_input!(input as DeriveInput);

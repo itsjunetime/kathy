@@ -6,13 +6,13 @@ Requires nightly and `env RUSTFLAGS="-Znext-solver=globally"` to work and use co
 
 ## 0 runtime cost
 
-Let's take this simply example of a struct that implements `kathy::Keyable` (the trait that makes this all work), and modify it via `IndexMut` (which the `KeyPath` macro implements for you):
+Let's take this simply example of a struct that implements `kathy::KeyPathIndexable` (the trait that makes this all work), and modify it via `IndexMut` (which the `Keyable` macro implements for you):
 
 ```rust
 use kathy::Keyable;
 use std::ops::IndexMut;
 
-#[derive(Keyable)
+#[derive(Keyable)]
 struct Person {
 	age: u16
 };
