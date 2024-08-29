@@ -50,7 +50,7 @@ demo::modify:
 
 With no optimizations enabled, doing only the bare minimum to ensure nothing is inlined *too* aggressively, (and assuming this is the only monomorphization of the requested fn) we get an extremely simple, basically transparent, implementation of the function.
 
-There is no runtime checking or processing - everything is completely transparent and exists only as types at runtime.
+There is no runtime checking or processing - everything is completely transparent and exists only as types at compile-time.
 
 And this works at arbitrary nested depths as well, even including working with `usize`-based keypaths/indices. For example:
 

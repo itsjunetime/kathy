@@ -89,7 +89,6 @@ pub fn derive_keyable(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 				::kathy::TypeEquals<&'a <#input_name as ::kathy::KeyPathIndexable<T>>::Output>,
 			// and then here are the requirements specific to IndexMut
 			for<'a> &'a  mut #input_name: ::kathy::KeyPathIndexable<T>,
-			#input_name: ::kathy::KeyPathIndexable<T>,
 			for<'a> <&'a mut #input_name as ::kathy::KeyPathIndexable<T>>::Output:
 				::kathy::TypeEquals<&'a mut <#input_name as ::kathy::KeyPathIndexable<T>>::Output>,
 		{
