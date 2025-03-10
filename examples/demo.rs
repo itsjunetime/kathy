@@ -1,6 +1,6 @@
 use std::ops::IndexMut;
 
-use kathy::{KeyPathIndexable, Keyable};
+use kathy::Keyable;
 
 #[derive(Debug, Keyable)]
 struct Family {

@@ -2,8 +2,8 @@
 name = "kathy_macros"
 version = "0.1.0"
 authors = ["June Welker <junewelker@gmail.com>"]
-edition = "2021"
-rust-version = "1.82"
+edition = "2024"
+rust-version = "1.85"
 description = "The proc-macros for the 'kathy' crate"
 repository = "https://github.com/itsjunetime/kathy"
 license = "MPL-2.0"
