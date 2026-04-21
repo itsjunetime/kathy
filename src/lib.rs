@@ -1,5 +1,6 @@
 #![expect(incomplete_features)]
 #![feature(unsized_const_params)]
+#![feature(adt_const_params)]
 #![doc = include_str!("../README.md")]
 
 use core::{
